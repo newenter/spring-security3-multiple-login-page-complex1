@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans  
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+    http://www.springframework.org/schema/context  
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd 
+    http://www.springframework.org/schema/security  
+    http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+    
+    
+    
+    <!-- 注销功能 ,过滤器 begin -->
+    <!-- 
+    	这个过滤器的初始化只有两个带参数的构造方法:
+    			1.(LogoutSuccessHandler logoutSuccessHandler,LogoutHandler[] handlers),
+    			2.(String logoutSuccessUrl,LogoutHandler[] handlers)
+    	如果调用第二个构造方法(传入一个url地址),构造方法内部将初始化一个SimpleUrlLogoutSuccessHandler来作为
+    	LogoutSuccessHandler
+     -->
+    <bean id="fms_LogoutFilter" class="org.springframework.security.web.authentication.logout.LogoutFilter">
+		<constructor-arg value="/fms/login.fms" /> <!-- 注销成功后跳转的地址 (调用第二个构造方法)-->
+		<constructor-arg>
+			<list> 
+				<!-- 注销处理器  -->
+				<bean class="org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler" />
+			</list>
+		</constructor-arg>
+		<!--  触发这个过滤器的url(也就是注销的url,默认为 : /j_spring_security_logout) -->
+		<property name="filterProcessesUrl" value="/fms/logout.fms" />
+	</bean>
+    <!-- 注销功能 ,过滤器 end -->
+    
+    
+    <!-- =========================================================================================================================== -->
+    
+    
+    <!-- 认证 处理过滤器  begin-->
+    
+     <bean id="fms_AuthenticationProcessingFilter" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
+    	 <!-- 认证管理器 -->
+		<property name="authenticationManager" ref="fms_AuthenticationManager" />
+		<!-- 认证失败处理器 -->
+		<property name="authenticationFailureHandler">
+			<bean class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+				<!-- 认证失败后调整至登录页面 -->
+				<property name="defaultFailureUrl" value="/fms/login.fms" />
+			</bean>
+		</property>
+		<!-- 认证成功处理器 -->
+		<property name="authenticationSuccessHandler">
+			<bean class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+				<!-- 认证成功后默认跳转页, -->
+				<property name="defaultTargetUrl" value="/fms/index.fms" /> 
+				<!-- 总是跳转 ： 设置为否 -->
+				<property name="alwaysUseDefaultTargetUrl" value="false" /> 
+			</bean>
+		</property>
+		<!--  认证地址-->
+		<property name="filterProcessesUrl" value="/fms/login_check.fms" />
+	</bean>
+	 <!-- 认证 处理过滤器  end-->
+	 
+	 <!-- =========================================================================================================================== -->
+
+	<!-- rememberMeFilter begin  -->
+	 <bean id="fms_RememberMeFilter" class="org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter">
+	   <property name="authenticationManager" ref="fms_AuthenticationManager"/>
+	   <property name="rememberMeServices" >
+		   <bean class="org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices">
+			   <property name="userDetailsService" ref="CustomUserDetailService"/>
+			   <property name="key" value="springRocks"/>
+			   <property name="alwaysRemember" value="false"/>
+		   </bean>
+	   </property>
+	</bean>
+	<!-- rememberMeFilter end -->
+	
+<!-- =========================================================================================================================== -->
+
+	<!-- session管理过滤器 begin -->
+	<bean name="fms_SessionManagementFilter" class="org.springframework.security.web.session.SessionManagementFilter">
+	   <constructor-arg name="securityContextRepository" ref="securityContextRepository"/>
+	   <!-- session管理策略 -->
+	   <constructor-arg name="sessionStrategy" ref="fms_SessionStrategy"/>
+	   <!-- session 过时处理策略 -->
+	   <property name="invalidSessionStrategy" ref="fms_InvalidSessionStrategy"/>
+	</bean>
+	<!-- 防session固化攻击 和session并发 -->
+	<!-- 
+		ConcurrentSessionControlStrategy 继承自SessionFixationProtectionStrategy类.
+		SessionFixationProtectionStrategy 可以防止 防session固化攻击
+		ConcurrentSessionControlStrategy  自身可以防止session并发.
+	 -->
+	<bean id="fms_SessionStrategy" class="org.springframework.security.web.authentication.session.ConcurrentSessionControlStrategy">
+		<!-- session 注册器 -->
+		<constructor-arg name="sessionRegistry">
+			<bean class="org.springframework.security.core.session.SessionRegistryImpl"/>
+		</constructor-arg>
+		<!-- SessionFixationProtectionStrategy 的属性  默认为true-->
+		<property name="migrateSessionAttributes" value="true" />
+		<property name="maximumSessions" value="1" />
+	</bean>
+	<!-- session过时,跳转页面 -->
+	<bean id="fms_InvalidSessionStrategy" class="org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy">
+		<constructor-arg name="invalidSessionUrl" value="/fms/sessioninvalid.fms"/>
+	</bean>
+	<!-- session管理过滤器 end -->
+
+<!-- =========================================================================================================================== -->
+
+
+	<!-- 异常过滤器 begin -->
+	<!-- 
+		一般spring security的异常主要可以分两种:
+			1,认证失败(需要重新认证,就是登录)
+			2,授权失败(无权访问,是权限问题)
+	 -->
+	<bean id="fms_ExceptionTranslationFilter" class="src.org.lhp.security.core.filter.FMS_ExceptionTranslationFilter">
+		<!-- 认证失败后,调用AuthenticationEntryPoint以了解下一步要做什么 (登录失败,继续登录)-->
+		<property name="authenticationEntryPoint">
+			<bean class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+				<property name="loginFormUrl" value="/fms/login.fms" />
+				<property name="forceHttps" value="false" />
+			</bean>
+		</property>
+		<!-- 访问失败处理器 (一般性的403错误) -->
+		<property name="accessDeniedHandler">
+			<bean class="org.springframework.security.web.access.AccessDeniedHandlerImpl">
+				<property name="errorPage" value="/fms/403.fms" />
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- 异常过滤器 end -->
+
+
+	
+<!-- =========================================================================================================================== -->
+	
+
+	 <bean id="fms_FilterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+		<property name="authenticationManager" ref="fms_AuthenticationManager" />
+		<property name="accessDecisionManager" ref="CustomAccessDecisionManager" />
+		<property name="securityMetadataSource" ref="CustomSecurityMetadataSource"/>
+	 </bean>
+	 
+	 
+<!-- =========================================================================================================================== -->
+	 
+<!-- ===========AuthenticationManager组件begin=========================================== --> 
+	 
+	 <bean id="fms_AuthenticationManager" class="org.springframework.security.authentication.ProviderManager">
+	   <property name="providers">
+	    <list>
+	     <ref local="fms_DaoAuthenticationProvider"/>
+	     <ref local="fms_RememberMeAuthenticationProvider" /> 
+	    </list>
+	   </property>
+	</bean>
+	<!-- ================================== -->
+	<bean id="fms_DaoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+	<!-- MD5加密 -->
+	   <property name="passwordEncoder" >
+	   		<bean class="org.springframework.security.authentication.encoding.Md5PasswordEncoder"/>
+	   </property>
+	   <!-- 盐值,使用的 -->
+	   <property name="saltSource" >
+	   		<bean class="org.springframework.security.authentication.dao.ReflectionSaltSource">
+	   		<!-- 使用user代理类的saltValue字段作为盐值 -->
+	   			<property name="userPropertyToUse" value="saltValue"/>
+	   		</bean>
+	   </property>
+	   <!--  user查询服务接口-->
+	   <property name="userDetailsService" ref="CustomUserDetailService"/>
+	</bean>
+	<!-- ================================== -->
+	<bean id="fms_RememberMeAuthenticationProvider" class="org.springframework.security.authentication.RememberMeAuthenticationProvider">
+	   <property name="key" value="springRocks"/>
+	</bean>
+	<!-- ===========AuthenticationManager组件end=========================================== --> 
+	<!-- =========================================================================================================================== -->
+	
+</beans>
