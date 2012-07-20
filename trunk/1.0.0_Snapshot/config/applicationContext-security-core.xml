@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans  
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+    http://www.springframework.org/schema/context  
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd 
+    http://www.springframework.org/schema/security  
+    http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+
+	<bean id="springSecurityFilterChain" class="org.springframework.security.web.FilterChainProxy">
+		<security:filter-chain-map path-type="ant">
+			<security:filter-chain filters="none" pattern="/resources/**" />
+			<security:filter-chain filters="none" pattern="/fms/login.fms" />
+			<security:filter-chain filters="none" pattern="/backstage/login.back" />
+
+			<security:filter-chain pattern="/fms/**" filters="
+			securityContextPersistenceFilter, 
+			fms_LogoutFilter, 
+          	fms_AuthenticationProcessingFilter, 
+          	securityContextHolderAwareRequestFilter,
+          	fms_RememberMeFilter,
+          	fms_SessionManagementFilter,
+          	fms_ExceptionTranslationFilter, 
+          	fms_FilterSecurityInterceptor" />
+
+		<security:filter-chain pattern="/backstage/**" filters="
+			securityContextPersistenceFilter,
+			backstage_LogoutFilter,
+          	backstage_AuthenticationProcessingFilter, 
+          	securityContextHolderAwareRequestFilter,
+          	backstage_RememberMeFilter,
+          	backstage_SessionManagementFilter,
+          	anonymousProcessingFilter,
+          	backstage_ExceptionTranslationFilter, 
+          	backstage_CustomFilter,
+          	backstage_FilterSecurityInterceptor" />
+
+		</security:filter-chain-map>
+	</bean>
+	
+	
+	<!-- ==============================公共过滤器 begin======================================= -->
+	
+	<!-- securityContextPersistenceFilter begin -->
+	<!-- 
+		作用 : 负责从SecurityContextRepository中获取或存储SecurityContext
+			 SecurityContext对象代表了用户认证过的session
+		securityContextRepository : 代表用户会话信息的存放策略
+	 -->
+	<bean id="securityContextRepository" class="org.springframework.security.web.context.HttpSessionSecurityContextRepository" />
+	<bean id="securityContextPersistenceFilter" class="org.springframework.security.web.context.SecurityContextPersistenceFilter">
+   			<property name="securityContextRepository" ref="securityContextRepository"/>
+	</bean>
+	<!-- securityContextPersistenceFilter end -->
+	
+	
+	<!-- ========================================================== -->
+	 <!-- HttpServletRequest包装过滤器 begin -->
+	 <!-- 它为请求处理器提供了额外的上下文信息 -->
+		<bean id="securityContextHolderAwareRequestFilter" class="org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter" />	
+	 <!-- HttpServletRequest包装过滤器 end -->
+	 
+	 
+	<!-- ===========================匿名访问=============================== -->
+	
+	<bean id="anonymousProcessingFilter" class="org.springframework.security.web.authentication.AnonymousAuthenticationFilter">
+   		<property name="key" value="changeThis"/>
+   		<property name="userAttribute" value="anonymousUser,ROLE_ANONYMOUS"/>
+	</bean> 
+	<!-- ========================================================== -->
+	
+	<!-- ==============================公共过滤器end======================================= -->
+	
+	
+	
+	<!-- ==============================公共组件 begin======================================= -->
+	<bean id="CustomAccessDecisionManager" class="src.org.lhp.security.core.service.CustomAccessDecisionManager"/>
+	<bean id="CustomSecurityMetadataSource" class="src.org.lhp.security.core.service.CustomSecurityMetadataSource"/>
+	<bean id="CustomUserDetailService" class="src.org.lhp.security.core.service.CustomUserDetailService">
+		<property name="userDAO"  ref="userDAO"/>
+	</bean>
+	<!-- ==============================公共组件 end======================================= -->
+	
+</beans>

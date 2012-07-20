@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    version="1.0">  
+    <persistence-unit name="loca.core" transaction-type="RESOURCE_LOCAL">
+    	<!--<provider>org.hibernate.ejb.HibernatePersistence</provider>
+    	<properties>
+          
+         <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect"/>
+          
+         <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+	     <property name="hibernate.hbm2ddl.auto" value="validate"/> 
+	     <property name="hibernate.archive.autodetection" value="false"/>
+	     <property name="hibernate.transaction.auto_close_session" value="false"/>
+      </properties>
+      <class>src.org.lhp.crm.domain.Role</class>
+      <class>src.org.lhp.crm.domain.User</class>
+      <class>src.org.lhp.crm.domain.Consume</class>
+    --></persistence-unit>  
+</persistence>  

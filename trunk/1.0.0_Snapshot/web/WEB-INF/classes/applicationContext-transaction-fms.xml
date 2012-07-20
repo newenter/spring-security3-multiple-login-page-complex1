@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    	http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/data/jpa 
+		http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+    ">
+	<!-- 事务管理器 -->
+	<bean id="transactionManager"  class="org.springframework.orm.jpa.JpaTransactionManager" lazy-init="true">  
+      <property name="entityManagerFactory" ref="entityManagerFactory"/>  
+   </bean>  
+   <!-- 事务切面 -->
+    <tx:advice id="transactionAdvice" transaction-manager="transactionManager">  
+        <tx:attributes>  
+            <tx:method name="get*" read-only="true" />  
+            <tx:method name="read*" read-only="true" />  
+            <tx:method name="list*" read-only="true" />  
+            <tx:method name="find*" read-only="true" />  
+            <tx:method name="load*" read-only="true" />  
+            <tx:method name="query*" read-only="true" />  
+            <tx:method name="doquery" read-only="true" />  
+            <tx:method name="*" />  
+        </tx:attributes>  
+    </tx:advice>
+    <!-- 织入 -->
+    <aop:config>  
+        <aop:pointcut id="backstageService"   expression="execution(* src.org.lhp.backstage.service.*.*(..))" />  
+        <aop:pointcut id="securityService"   expression="execution(* src.org.lhp.security.lusrmgr.service.*.*(..))" />  
+        <aop:pointcut id="fmsService"   expression="execution(* src.org.lhp.fms.service.*.*(..))" />  
+        <aop:advisor advice-ref="transactionAdvice"   pointcut-ref="backstageService" />  
+        <aop:advisor advice-ref="transactionAdvice"   pointcut-ref="securityService" />  
+        <aop:advisor advice-ref="transactionAdvice"   pointcut-ref="fmsService" />  
+    </aop:config> 
+    
+</beans> 
